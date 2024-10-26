@@ -1,81 +1,85 @@
-import { useEffect, useState } from 'react';  
-import './App.css';  
+import { useEffect, useState } from 'react';
+import './App.css';
 
-function App() {  
-  const [socket, setSocket] = useState(null);  
-  const [messageList, setMessageList] = useState([]);  
-  const [latestMessage, setLatestMessage] = useState("");  
-  const [message, setMessage] = useState("");  
-  const [clientId, setClientId] = useState(null); // State to store the client ID  
+function App() {
+  const [socket, setSocket] = useState(null);
+  const [messageList, setMessageList] = useState([]);
+  const [latestMessage, setLatestMessage] = useState("");
+  const [message, setMessage] = useState("");
+  const [clientId, setClientId] = useState(null);
+  const [onlineCount, setOnlineCount] = useState(0);
 
-  useEffect(() => {  
-    const socket = new WebSocket('ws://localhost:8080');  
+  useEffect(() => {
+    const socket = new WebSocket('ws://localhost:8080');
 
-    socket.onopen = () => {  
-      console.log("Connected");  
-      setSocket(socket);  
-    };  
+    socket.onopen = () => {
+      console.log("Connected");
+      setSocket(socket);
+    };
 
-    socket.onmessage = (event) => {  
-      console.log('Received msg: ', event.data);  
-      if (clientId === null && event.data.startsWith("Your client ID is ")) {  
-        const id = event.data.split(" ")[5]; // Extract client ID from the welcome message  
-        setClientId(id); // Store the client ID  
-      } else {  
-        setMessageList((prev) => [...prev, event.data]);  
-        setLatestMessage(event.data);  
-      }  
-    };  
+    socket.onmessage = (event) => {
+      console.log('Received msg: ', event.data);
+      if (clientId === null && event.data.startsWith("New client connected with ID: ")) {
+        const id = event.data.split(" ")[5];
+        setClientId(id);
+      } else if (event.data.startsWith("Online Users Count: ")) {
+        const count = event.data.split(": ")[1];
+        setOnlineCount(count);
+      } else {
+        setMessageList((prev) => [...prev, event.data]);
+        setLatestMessage(event.data);
+      }
+    };
 
-    // Cleanup on component unmount  
-    return () => {  
-      socket.close();  
-    };  
-  }, [clientId]);  
+    return () => {
+      socket.close();
+    };
+  }, [clientId]);
 
-  if (!socket) {  
-    return <div>Loading...</div>;  
-  }  
-
-  const handleSend = () => {  
-    if (message.length !== 0){
-      socket.send(message);  
+  const handleSend = () => {
+    if (message.trim().length > 0) {
+      socket.send(message);
       setMessage("");
-      } 
-    // if (clientId) {  
-    //   if (message != null){
-    //   socket.send(message);  
-    //   setMessage("");
-    //   } // Clear the input after sending  
-    // } else {  
-    //   //socket.send(message)
-    //   console.warn("Client ID is not set yet.");  
-    // }  
-  };  
+    }
+  };
 
-  return (  
-    <>  
-      <input  
-        value={message}  
-        onChange={(e) => {  
-          setMessage(e.target.value);  
-        }}  
-        placeholder="Type your message"  
-      />  
-      <button onClick={handleSend}>Send</button>  
-      <div>  
-        <strong>Latest Message:</strong> {latestMessage}  
-      </div>  
-      <div>  
-        <strong>Message List:</strong>  
-        <ul>  
-          {messageList.map((msg, index) => (  
-            <li key={index}>{msg}</li>  
-          ))}  
-        </ul>  
-      </div>  
-    </>  
-  );  
-}  
+  if (!socket) {
+    return <div>Loading...</div>;
+  }
+
+  return (
+    <div className="chat-container">
+      <header>
+        <h2>Chat Room</h2>
+        <div><strong>Online Users: {onlineCount}</strong></div>
+      </header>
+
+      <div className="message-area">
+        <div className="messages">
+          <ul>
+            {messageList.map((msg, index) => (
+              <li key={index} className="message">
+                {msg}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="latest-message">
+          <strong>Latest Message:</strong> {latestMessage}
+        </div>
+      </div>
+
+      <footer className="input-area">
+        <input
+          aria-label="Type your message"
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder="Type your message"
+        />
+        <button onClick={handleSend}>Send</button>
+      </footer>
+    </div>
+  );
+}
 
 export default App;
