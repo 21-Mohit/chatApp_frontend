@@ -10,7 +10,7 @@ function App() {
   const [onlineCount, setOnlineCount] = useState(0);
 
   useEffect(() => {
-    const socket = new WebSocket('ws://localhost:8080');
+    const socket = new WebSocket('wss://chatroom-backend-gke0.onrender.com');
 
     socket.onopen = () => {
       console.log("Connected");
